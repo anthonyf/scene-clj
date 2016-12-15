@@ -17,7 +17,7 @@
                 (range 1000)))
 
          ;; some other test stuff
-         [{:type :line :x1 10 :y1 10 :x2 100 :y2 100
+         [{:behavior :line :x1 10 :y1 10 :x2 100 :y2 100
            :color [1 0 0 1]}
           (line 35 30 200 250) ;; convenience line constructor
           ]))
