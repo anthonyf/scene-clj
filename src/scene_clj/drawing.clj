@@ -12,9 +12,13 @@
                        :else (class obj))))
 
 (defmethod draw ::comp
-  [context {:keys [behavior] :as obj}]
-  (doseq [b behavior]
-    ((get-method draw b) context obj)))
+  [{:keys [shape-renderer]
+    :as context} {:keys [behavior] :as obj}]
+  (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)
+        old-transform (.cpy #^Matrix4 transform)]
+    (doseq [b behavior]
+      ((get-method draw b) context obj))
+    (.setTransformMatrix #^ShapeRenderer shape-renderer old-transform)))
 
 (defmethod draw :default
   [_ _])
@@ -33,29 +37,6 @@
   [children & {:as m}]
   (merge {:behavior :group :children children}
          m))
-
-(defn apply-transform
-  [{:keys [shape-renderer] :as context}
-   {[sx sy :as scale] :scale
-    [tx ty :as translate] :translate
-    rotate :rotate}
-   f]
-  (if (or translate scale rotate)
-    (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)
-          old-transform (.cpy #^Matrix4 transform)
-          m3 (.set #^Matrix3 (Matrix3.) transform)]
-      (when scale
-        (.scl #^Matrix3 m3 sx sy))
-      (when rotate
-        (.rotate #^Matrix3 m3 rotate))
-      (when translate
-        (.trn tx ty))
-      (f (let [new-matrix (.set #^Matrix4 (Matrix4.) m3)]
-           (.set #^Matrix4 (.getTransformMatrix #^ShapeRenderer shape-renderer)
-                 #^Matrix3 m3)
-           (f context)
-           (.setTransformMatrix #^ShapeRenderer shape-renderer old-transform))))
-    (f context)))
 
 (defmethod draw :line
   [{:keys [shape-renderer] :as context}
@@ -86,40 +67,17 @@
   (.rect #^ShapeRenderer shape-renderer x y width height)
   (.end #^ShapeRenderer shape-renderer))
 
-(defn rect
-  [x y w h & {:keys [color filled?] :as m}]
-  (merge {:behavior :rect :x x :y y :width w :height h
-          :color color :filled? filled?}
-         m))
-
 (defmethod draw :rotate
   [{:keys [shape-renderer] :as context}
-   {:keys [r children] :as obj}]
-  (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)
-        old-transform (.cpy #^Matrix4 transform)
-        result (do
-                 (.rotate #^Matrix4 transform 0 0 1 r)
-                 (.setTransformMatrix #^ShapeRenderer shape-renderer transform)
-                 ((get-method draw :group) context obj))]
-    (.setTransformMatrix #^ShapeRenderer shape-renderer old-transform)
-    result))
+   {:keys [degrees] :as obj}]
+  (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)]
+    (.rotate #^Matrix4 transform 0 0 1 degrees)
+    (.setTransformMatrix #^ShapeRenderer shape-renderer transform)))
 
-
-(defn rotate
-  [r children & {:keys [] :as m}]
-  (merge {:behavior :rotate
-          :r r
-          :children children}
-         m))
 
 (defmethod draw :translate
   [{:keys [shape-renderer] :as context}
-   {:keys [x y children] :as obj}]
-  (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)
-        old-transform (.cpy #^Matrix4 transform)
-        result (do
-                 (.trn #^Matrix4 transform x y 0)
-                 (.setTransformMatrix #^ShapeRenderer shape-renderer transform)
-                 ((get-method draw :group) context obj))]
-    (.setTransformMatrix #^ShapeRenderer shape-renderer old-transform)
-    result))
+   {:keys [tx ty] :as obj}]
+  (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)]
+    (.trn #^Matrix4 transform tx ty 0)
+    (.setTransformMatrix #^ShapeRenderer shape-renderer transform)))

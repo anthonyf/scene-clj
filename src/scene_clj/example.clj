@@ -1,6 +1,6 @@
 (ns scene-clj.example
   (:require [scene-clj.core :as scene]
-            [scene-clj.drawing :refer [line rect]]
+            [scene-clj.drawing :refer [line]]
             [scene-clj.behavior :as b]))
 
 (def screen-size [1024 768])
@@ -10,10 +10,12 @@
          ;; bunch of animated rectangles
          (let [[width height] screen-size]
            (map (fn [_]
-                  {:behavior [:translate ::funtimes] :x (rand-int width) :y (rand-int height)
-                   :children [{:behavior :rotate :r (rand-int 360)
-                               :children [(rect -50 -50 100 100
-                                                :color [(rand) (rand) (rand) 1])]}]})
+                  {:behavior [:rotate :translate :rect ::funtimes]
+                   :tx (rand-int width) :ty (rand-int height)
+                   :x -50 :y -50
+                   :width 100 :height 100
+                   :color [(rand) (rand) (rand) 1]
+                   :degrees (rand-int 360)})
                 (range 1000)))
 
          ;; some other test stuff
@@ -26,9 +28,8 @@
   [delta obj]
   (-> obj
       ;; increase rotation of rectangle
-      (update-in [:children 0 :r]
-                 #(mod (inc %) 360))))
-
+      (update :degrees
+              #(mod (inc %) 360))))
 
 (defn -main
   [& args]
