@@ -51,18 +51,15 @@
     (f context)))
 
 (defmethod draw :line
-  [{:keys [] :as context}
+  [{:keys [shape-renderer] :as context}
    {:keys [x1 y1 x2 y2 color] :or {color [1 1 1 1] :as obj}
     :as obj}]
-  (apply-transform
-   context obj
-   (fn [{:keys [shape-renderer] :as context}]
-     (.begin #^ShapeRenderer shape-renderer ShapeRenderer$ShapeType/Line)
-     (when color
-       (let [[r g b a] color]
-         (.setColor #^ShapeRenderer shape-renderer r g b a)))
-     (.line #^ShapeRenderer shape-renderer x1 y1 x2 y2)
-     (.end #^ShapeRenderer shape-renderer))))
+  (.begin #^ShapeRenderer shape-renderer ShapeRenderer$ShapeType/Line)
+  (when color
+    (let [[r g b a] color]
+      (.setColor #^ShapeRenderer shape-renderer r g b a)))
+  (.line #^ShapeRenderer shape-renderer x1 y1 x2 y2)
+  (.end #^ShapeRenderer shape-renderer))
 
 (defn line
   [x1 y1 x2 y2 & {:keys [color] :as m}]
@@ -87,3 +84,35 @@
   (merge {:type :rect :x x :y y :width w :height h
           :color color :filled? filled?}
          m))
+
+(defmethod draw :rotate
+  [{:keys [shape-renderer] :as context}
+   {:keys [r children] :as obj}]
+  (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)
+        old-transform (.cpy #^Matrix4 transform)
+        result (do
+                 (.rotate #^Matrix4 transform 0 0 1 r)
+                 (.setTransformMatrix #^ShapeRenderer shape-renderer transform)
+                 ((get-method draw :group) context obj))]
+    (.setTransformMatrix #^ShapeRenderer shape-renderer old-transform)
+    result))
+
+
+(defn rotate
+  [r children & {:keys [] :as m}]
+  (merge {:type :rotate
+          :r r
+          :children children}
+         m))
+
+(defmethod draw :translate
+  [{:keys [shape-renderer] :as context}
+   {:keys [x y children] :as obj}]
+  (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)
+        old-transform (.cpy #^Matrix4 transform)
+        result (do
+                 (.trn #^Matrix4 transform x y 0)
+                 (.setTransformMatrix #^ShapeRenderer shape-renderer transform)
+                 ((get-method draw :group) context obj))]
+    (.setTransformMatrix #^ShapeRenderer shape-renderer old-transform)
+    result))
