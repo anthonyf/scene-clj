@@ -10,9 +10,8 @@
          ;; bunch of animated rectangles
          (let [[width height] screen-size]
            (map (fn [_]
-                  {:type :translate :x (rand-int width) :y (rand-int height)
-                   :behavior ::funtimes ;; give this object funtimes behavior
-                   :children [{:type :rotate :r (rand-int 360)
+                  {:behavior [:translate ::funtimes] :x (rand-int width) :y (rand-int height)
+                   :children [{:behavior :rotate :r (rand-int 360)
                                :children [(rect -50 -50 100 100
                                                 :color [(rand) (rand) (rand) 1])]}]})
                 (range 1000)))
@@ -35,5 +34,3 @@
   [& args]
   (let [[width height] screen-size]
     (scene/run-scene :screen-width width :screen-height height)))
-
-((fnil inc 0) nil)

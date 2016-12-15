@@ -5,12 +5,19 @@
                                  Matrix3)))
 
 (defmulti draw (fn [context obj]
-                 (cond (map? obj) (:type obj)
+                 (cond (map? obj) (let [{:keys [behavior]} obj]
+                                    (if (sequential? behavior)
+                                      ::comp
+                                      behavior))
                        :else (class obj))))
 
-(defmethod draw nil
-  [_ _]
-  )
+(defmethod draw ::comp
+  [context {:keys [behavior] :as obj}]
+  (doseq [b behavior]
+    ((get-method draw b) context obj)))
+
+(defmethod draw :default
+  [_ _])
 
 (defmethod draw clojure.lang.Sequential
   [context col]
@@ -24,7 +31,7 @@
 
 (defn group
   [children & {:as m}]
-  (merge {:type :group :children children}
+  (merge {:behavior :group :children children}
          m))
 
 (defn apply-transform
@@ -63,7 +70,7 @@
 
 (defn line
   [x1 y1 x2 y2 & {:keys [color] :as m}]
-  (merge {:type :line :x1 x1 :y1 y1 :x2 x2 :y2 y2 :color color}
+  (merge {:behavior :line :x1 x1 :y1 y1 :x2 x2 :y2 y2 :color color}
          m))
 
 (defmethod draw :rect
@@ -81,7 +88,7 @@
 
 (defn rect
   [x y w h & {:keys [color filled?] :as m}]
-  (merge {:type :rect :x x :y y :width w :height h
+  (merge {:behavior :rect :x x :y y :width w :height h
           :color color :filled? filled?}
          m))
 
@@ -100,7 +107,7 @@
 
 (defn rotate
   [r children & {:keys [] :as m}]
-  (merge {:type :rotate
+  (merge {:behavior :rotate
           :r r
           :children children}
          m))

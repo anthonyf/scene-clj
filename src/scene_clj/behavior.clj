@@ -1,10 +1,18 @@
 (ns scene-clj.behavior)
 
 (defmulti behave (fn [delta obj]
-                   (cond (map? obj)
-                         (or (:behavior obj)
-                             (:type obj))
+                   (cond (map? obj) (let [{:keys [behavior]} obj]
+                                      (if (sequential? behavior)
+                                        ::comp
+                                        behavior))
                          :else (class obj))))
+
+(defmethod behave ::comp
+  [context {:keys [behavior] :as obj}]
+  (reduce (fn [obj b]
+            ((get-method behave b) context obj))
+          obj
+          behavior))
 
 (defmethod behave :default
   [_ obj]
