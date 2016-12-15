@@ -52,8 +52,9 @@
                 (.end @shape-renderer)
 
                 (try
-                  (b/behave (.getDeltaTime Gdx/graphics)
-                            @scene)
+                  (reset! scene
+                          (b/behave (.getDeltaTime Gdx/graphics)
+                                    @scene))
                   (d/draw {:shape-renderer @shape-renderer}
                           @scene)
 

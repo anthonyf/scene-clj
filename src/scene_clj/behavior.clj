@@ -2,9 +2,8 @@
 
 (defmulti behave (fn [delta obj]
                    (cond (map? obj)
-                         (do (println "test")
-                             (:behavior obj)) #_ (or (:behavior obj)
-                                                        (:type obj))
+                         (or (:behavior obj)
+                             (:type obj))
                          :else (class obj))))
 
 (defmethod behave :default
@@ -13,9 +12,7 @@
 
 (defmethod behave :group
   [delta {:keys [children] :as obj}]
-  (assoc obj :children (map (fn [obj]
-                              (behave delta obj))
-                            children)))
+  (assoc obj :children (behave delta children)))
 
 (defmethod behave clojure.lang.Sequential
   [delta col]

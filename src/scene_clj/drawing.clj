@@ -44,7 +44,7 @@
       (when translate
         (.trn tx ty))
       (f (let [new-matrix (.set #^Matrix4 (Matrix4.) m3)]
-           (.set #^Matrix4 (.getTransformMatrix #^ShapeRenderer shape-renderer transform)
+           (.set #^Matrix4 (.getTransformMatrix #^ShapeRenderer shape-renderer)
                  #^Matrix3 m3)
            (f context)
            (.setTransformMatrix #^ShapeRenderer shape-renderer old-transform))))
@@ -54,14 +54,15 @@
   [{:keys [] :as context}
    {:keys [x1 y1 x2 y2 color] :or {color [1 1 1 1] :as obj}
     :as obj}]
-  (apply-transform context obj
-                   (fn [{:keys [shape-renderer] :as context}]
-                     (.begin #^ShapeRenderer shape-renderer ShapeRenderer$ShapeType/Line)
-                     (when color
-                       (let [[r g b a] color]
-                         (.setColor #^ShapeRenderer shape-renderer r g b a)))
-                     (.line #^ShapeRenderer shape-renderer x1 y1 x2 y2)
-                     (.end #^ShapeRenderer shape-renderer))))
+  (apply-transform
+   context obj
+   (fn [{:keys [shape-renderer] :as context}]
+     (.begin #^ShapeRenderer shape-renderer ShapeRenderer$ShapeType/Line)
+     (when color
+       (let [[r g b a] color]
+         (.setColor #^ShapeRenderer shape-renderer r g b a)))
+     (.line #^ShapeRenderer shape-renderer x1 y1 x2 y2)
+     (.end #^ShapeRenderer shape-renderer))))
 
 (defn line
   [x1 y1 x2 y2 & {:keys [color] :as m}]
