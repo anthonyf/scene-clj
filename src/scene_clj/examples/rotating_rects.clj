@@ -1,4 +1,4 @@
-(ns scene-clj.example
+(ns scene-clj.examples.rotating-rects
   (:require [scene-clj.core :as scene]
             [scene-clj.drawing :refer [line]]
             [scene-clj.behavior :as b]))

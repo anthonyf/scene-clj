@@ -9,6 +9,6 @@
                  [com.badlogicgames.gdx/gdx-platform "1.9.4" :classifier "natives-desktop"]
                  [com.badlogicgames.gdx/gdx-freetype "1.9.4"]
                  [com.badlogicgames.gdx/gdx-freetype-platform "1.9.4" :classifier "natives-desktop"]]
-  :main ^:skip-aot scene-clj.example
+  :main ^:skip-aot scene-clj.examples.rotating-rects
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
