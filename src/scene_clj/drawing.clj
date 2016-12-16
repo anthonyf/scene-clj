@@ -1,8 +1,9 @@
 (ns scene-clj.drawing
-  (import (com.badlogic.gdx.graphics.glutils ShapeRenderer
-                                             ShapeRenderer$ShapeType)
-          (com.badlogic.gdx.math Matrix4
-                                 Matrix3)))
+  (:import
+   (com.badlogic.gdx.graphics.glutils ShapeRenderer
+                                      ShapeRenderer$ShapeType)
+   (com.badlogic.gdx.graphics.g2d SpriteBatch)
+   (com.badlogic.gdx.math Matrix4 Matrix3)))
 
 (defmulti draw (fn [context obj]
                  (cond (map? obj) (let [{:keys [behavior]} obj]
@@ -12,13 +13,15 @@
                        :else (class obj))))
 
 (defmethod draw ::comp
-  [{:keys [shape-renderer]
+  [{:keys [shape-renderer
+           sprite-batch]
     :as context} {:keys [behavior] :as obj}]
   (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)
         old-transform (.cpy #^Matrix4 transform)]
     (doseq [b behavior]
       ((get-method draw b) context obj))
-    (.setTransformMatrix #^ShapeRenderer shape-renderer old-transform)))
+    (.setTransformMatrix #^ShapeRenderer shape-renderer old-transform)
+    (.setTransformMatrix #^SpriteBatch sprite-batch old-transform)))
 
 (defmethod draw :default
   [_ _])
@@ -68,16 +71,33 @@
   (.end #^ShapeRenderer shape-renderer))
 
 (defmethod draw :rotate
-  [{:keys [shape-renderer] :as context}
+  [{:keys [shape-renderer
+           sprite-batch] :as context}
    {:keys [degrees] :as obj}]
   (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)]
     (.rotate #^Matrix4 transform 0 0 1 degrees)
-    (.setTransformMatrix #^ShapeRenderer shape-renderer transform)))
+    (.setTransformMatrix #^ShapeRenderer shape-renderer transform)
+    (.setTransformMatrix #^SpriteBatch sprite-batch transform)))
 
+(defmethod draw :scale
+  [{:keys [shape-renderer
+           sprite-batch] :as context}
+   {:keys [sx sy] :as obj}]
+  (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)]
+    (.scale #^Matrix4 transform sx sy)
+    (.setTransformMatrix #^ShapeRenderer shape-renderer transform)
+    (.setTransformMatrix #^SpriteBatch sprite-batch transform)))
 
 (defmethod draw :translate
-  [{:keys [shape-renderer] :as context}
+  [{:keys [shape-renderer
+           sprite-batch] :as context}
    {:keys [tx ty] :as obj}]
   (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)]
     (.trn #^Matrix4 transform tx ty 0)
-    (.setTransformMatrix #^ShapeRenderer shape-renderer transform)))
+    (.setTransformMatrix #^ShapeRenderer shape-renderer transform)
+    (.setTransformMatrix #^SpriteBatch sprite-batch transform)))
+
+(defmethod draw :image
+  [{:keys [sprite-batch] :as context}
+   {:keys [x y] :as obj}]
+  )

@@ -11,7 +11,8 @@
            (com.badlogic.gdx.scenes.scene2d Stage)
            (com.badlogic.gdx.utils.viewport FitViewport)
            (com.badlogic.gdx.graphics.glutils ShapeRenderer ShapeRenderer$ShapeType)
-           (com.badlogic.gdx.math Matrix4))
+           (com.badlogic.gdx.math Matrix4)
+           (com.badlogic.gdx.graphics.g2d SpriteBatch))
   (:require [clojure.stacktrace :as stack]
             [scene-clj.drawing :as d]
             [scene-clj.behavior :as b]))
@@ -21,12 +22,14 @@
   (let [viewport (atom nil)
         camera (atom nil)
         shape-renderer (atom nil)
+        sprite-batch (atom nil)
         transform (atom (Matrix4.))
         app (proxy [ApplicationAdapter] []
               (create []
                 (reset! camera (OrthographicCamera. width height))
                 (reset! viewport (FitViewport. width height @camera))
                 (reset! shape-renderer (ShapeRenderer.))
+                (reset! sprite-batch (SpriteBatch.))
                 (.update @camera)
                 (proxy-super create))
 
@@ -39,6 +42,9 @@
                 (.setProjectionMatrix #^ShapeRenderer @shape-renderer
                                       (.combined #^OrthographicCamera @camera))
                 (.setTransformMatrix #^ShapeRenderer @shape-renderer @transform)
+                (.setProjectionMatrix #^SpriteBatch @sprite-batch
+                                      (.combined #^OrthographicCamera @camera))
+                (.setTransformMatrix #^SpriteBatch @sprite-batch @transform)
 
                 ;; draw a box around the game screen
                 (.begin @shape-renderer ShapeRenderer$ShapeType/Line)
@@ -55,7 +61,8 @@
                   (reset! scene
                           (b/behave (.getDeltaTime Gdx/graphics)
                                     @scene))
-                  (d/draw {:shape-renderer @shape-renderer}
+                  (d/draw {:shape-renderer @shape-renderer
+                           :sprite-batch @sprite-batch}
                           @scene)
 
                   (catch Exception e
@@ -70,7 +77,8 @@
                 (proxy-super resize width height))
 
               (dispose []
-                (.dispose @shape-renderer)))]
+                (.dispose @shape-renderer)
+                (.dispose @sprite-batch)))]
     app))
 
 (def scene (atom nil))
