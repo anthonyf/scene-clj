@@ -18,6 +18,7 @@
   [_ obj]
   obj)
 
+
 (defmethod behave :group
   [delta {:keys [children] :as obj}]
   (assoc obj :children (behave delta children)))

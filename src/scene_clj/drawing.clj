@@ -99,5 +99,6 @@
 
 (defmethod draw :image
   [{:keys [sprite-batch] :as context}
-   {:keys [x y] :as obj}]
-  )
+   {:keys [x y texture] :as obj}]
+  (.begin #^SpriteBatch sprite-batch)
+  (.end  #^SpriteBatch sprite-batch))

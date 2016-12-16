@@ -15,7 +15,8 @@
            (com.badlogic.gdx.graphics.g2d SpriteBatch))
   (:require [clojure.stacktrace :as stack]
             [scene-clj.drawing :as d]
-            [scene-clj.behavior :as b]))
+            [scene-clj.behavior :as b]
+            [scene-clj.lifecycle :as l]))
 
 (defn- make-application
   [scene width height]
@@ -25,6 +26,7 @@
         sprite-batch (atom nil)
         transform (atom (Matrix4.))
         app (proxy [ApplicationAdapter] []
+
               (create []
                 (reset! camera (OrthographicCamera. width height))
                 (reset! viewport (FitViewport. width height @camera))
