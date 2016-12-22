@@ -16,74 +16,88 @@
   (:require [clojure.stacktrace :as stack]
             [scene-clj.drawing :as d]
             [scene-clj.behavior :as b]
-            [scene-clj.lifecycle :as l]))
+            [scene-clj.assets :as a]))
+
+(def scene
+  "The scene graph"
+  (atom nil))
+
+(def assets
+  "A list of assets to load"
+  (atom nil))
+
+(def ^:private context (atom nil))
+
+(defn- assets-changed
+  [key assets old-state new-state]
+  (doseq [asset @assets]
+    (a/load-asset asset)))
 
 (defn- make-application
-  [scene width height]
-  (let [viewport (atom nil)
-        camera (atom nil)
-        shape-renderer (atom nil)
-        sprite-batch (atom nil)
-        transform (atom (Matrix4.))
+  [width height]
+  (let [indentity-matrix (Matrix4.)
         app (proxy [ApplicationAdapter] []
 
               (create []
-                (reset! camera (OrthographicCamera. width height))
-                (reset! viewport (FitViewport. width height @camera))
-                (reset! shape-renderer (ShapeRenderer.))
-                (reset! sprite-batch (SpriteBatch.))
-                (.update @camera)
+                (add-watch assets ::context-watcher assets-changed)
+                (let [camera (OrthographicCamera. width height)]
+                  (reset! context
+                          {:shape-renderer (ShapeRenderer.)
+                           :sprite-batch (SpriteBatch.)
+                           :camera camera
+                           :viewport (FitViewport. width height camera)}))
+                (.update (:camera @context))
+                (.idt #^Matrix4 indentity-matrix)
                 (proxy-super create))
 
               (render []
-                (.glClearColor Gdx/gl 0 0 0 1)
-                (.glClear Gdx/gl GL30/GL_COLOR_BUFFER_BIT)
+                (let [{:keys [shape-renderer sprite-batch camera viewport]} @context]
+                  (.glClearColor Gdx/gl 0 0 0 1)
+                  (.glClear Gdx/gl GL30/GL_COLOR_BUFFER_BIT)
 
-                (.idt #^Matrix4 @transform)
+                  (.setProjectionMatrix #^ShapeRenderer shape-renderer
+                                        (.combined #^OrthographicCamera camera))
+                  (.setTransformMatrix #^ShapeRenderer shape-renderer indentity-matrix)
+                  (.setProjectionMatrix #^SpriteBatch sprite-batch
+                                        (.combined #^OrthographicCamera camera))
+                  (.setTransformMatrix #^SpriteBatch sprite-batch indentity-matrix)
 
-                (.setProjectionMatrix #^ShapeRenderer @shape-renderer
-                                      (.combined #^OrthographicCamera @camera))
-                (.setTransformMatrix #^ShapeRenderer @shape-renderer @transform)
-                (.setProjectionMatrix #^SpriteBatch @sprite-batch
-                                      (.combined #^OrthographicCamera @camera))
-                (.setTransformMatrix #^SpriteBatch @sprite-batch @transform)
+                  ;; draw a box around the game screen
+                  (.begin shape-renderer ShapeRenderer$ShapeType/Line)
+                  (let [[sw sh] [width height]
+                        sw (- sw 1)
+                        sh (- sh 1)]
+                    (.line shape-renderer 1 1 sw 1)
+                    (.line shape-renderer sw 1 sw sh)
+                    (.line shape-renderer sw sh 1 sh)
+                    (.line shape-renderer 1 sh 1 1))
+                  (.end shape-renderer)
 
-                ;; draw a box around the game screen
-                (.begin @shape-renderer ShapeRenderer$ShapeType/Line)
-                (let [[sw sh] [width height]
-                      sw (- sw 1)
-                      sh (- sh 1)]
-                  (.line @shape-renderer 1 1 sw 1)
-                  (.line @shape-renderer sw 1 sw sh)
-                  (.line @shape-renderer sw sh 1 sh)
-                  (.line @shape-renderer 1 sh 1 1))
-                (.end @shape-renderer)
+                  (try
+                    (reset! scene
+                            (b/behave (.getDeltaTime Gdx/graphics)
+                                      @scene))
 
-                (try
-                  (reset! scene
-                          (b/behave (.getDeltaTime Gdx/graphics)
-                                    @scene))
-                  (d/draw {:shape-renderer @shape-renderer
-                           :sprite-batch @sprite-batch}
-                          @scene)
+                    (d/draw @context
+                            @scene)
 
-                  (catch Exception e
-                    (stack/print-stack-trace e)
-                    (flush)
-                    (reset! scene nil)))
+                    (catch Exception e
+                      (stack/print-stack-trace e)
+                      (flush)
+                      (reset! scene nil)))
 
-                (proxy-super render))
+                  (proxy-super render)))
 
               (resize [width height]
-                (.update @viewport width height true)
+                (let [{:keys [viewport]} @context]
+                  (.update viewport width height true))
                 (proxy-super resize width height))
 
               (dispose []
-                (.dispose @shape-renderer)
-                (.dispose @sprite-batch)))]
+                (let [{:keys [shape-renderer sprite-batch]} @context]
+                  (.dispose shape-renderer)
+                  (.dispose sprite-batch))))]
     app))
-
-(def scene (atom nil))
 
 (defn run-scene
   [& {:keys [screen-width screen-height resizable title]
@@ -93,7 +107,7 @@
                  (-> .width (set! screen-width))
                  (-> .height (set! screen-height))
                  (-> .resizable (set! resizable)))]
-    (LwjglApplication. (make-application scene screen-width screen-height) config)
+    (LwjglApplication. (make-application screen-width screen-height) config)
     (Keyboard/enableRepeatEvents true)))
 
 
