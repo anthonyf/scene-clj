@@ -12,26 +12,17 @@
            (com.badlogic.gdx.utils.viewport FitViewport)
            (com.badlogic.gdx.graphics.glutils ShapeRenderer ShapeRenderer$ShapeType)
            (com.badlogic.gdx.math Matrix4)
-           (com.badlogic.gdx.graphics.g2d SpriteBatch))
+           (com.badlogic.gdx.graphics.g2d SpriteBatch)
+           [com.badlogic.gdx.assets AssetManager])
   (:require [clojure.stacktrace :as stack]
             [scene-clj.drawing :as d]
-            [scene-clj.behavior :as b]
-            [scene-clj.assets :as a]))
+            [scene-clj.behavior :as b]))
 
 (def scene
   "The scene graph"
   (atom nil))
 
-(def assets
-  "A list of assets to load"
-  (atom nil))
-
 (def ^:private context (atom nil))
-
-(defn- assets-changed
-  [key assets old-state new-state]
-  (doseq [asset @assets]
-    (a/load-asset asset)))
 
 (defn- make-application
   [width height]
@@ -39,13 +30,13 @@
         app (proxy [ApplicationAdapter] []
 
               (create []
-                (add-watch assets ::context-watcher assets-changed)
                 (let [camera (OrthographicCamera. width height)]
                   (reset! context
                           {:shape-renderer (ShapeRenderer.)
                            :sprite-batch (SpriteBatch.)
                            :camera camera
-                           :viewport (FitViewport. width height camera)}))
+                           :viewport (FitViewport. width height camera)
+                           :asset-manager (AssetManager.)}))
                 (.update (:camera @context))
                 (.idt #^Matrix4 indentity-matrix)
                 (proxy-super create))
