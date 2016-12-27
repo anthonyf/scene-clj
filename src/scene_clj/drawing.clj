@@ -2,8 +2,11 @@
   (:import
    (com.badlogic.gdx.graphics.glutils ShapeRenderer
                                       ShapeRenderer$ShapeType)
-   (com.badlogic.gdx.graphics.g2d SpriteBatch)
-   (com.badlogic.gdx.math Matrix4 Matrix3)))
+   (com.badlogic.gdx.graphics.g2d SpriteBatch
+                                  BitmapFont)
+   (com.badlogic.gdx.math Matrix4 Matrix3)
+   (com.badlogic.gdx.assets AssetManager)
+   (com.badlogic.gdx.graphics.g2d.freetype FreetypeFontLoader$FreeTypeFontLoaderParameter)))
 
 (defmulti draw (fn [context obj]
                  (cond (map? obj) (let [{:keys [behavior]} obj]
@@ -91,7 +94,7 @@
 (defmethod draw :translate
   [{:keys [shape-renderer
            sprite-batch] :as context}
-   {:keys [tx ty] :as obj}]
+   {:keys [tx ty] :or {tx 0 ty 0} :as obj}]
   (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)]
     (.trn #^Matrix4 transform tx ty 0)
     (.setTransformMatrix #^ShapeRenderer shape-renderer transform)
@@ -101,4 +104,22 @@
   [{:keys [sprite-batch] :as context}
    {:keys [x y texture] :as obj}]
   (.begin #^SpriteBatch sprite-batch)
+  (.end  #^SpriteBatch sprite-batch))
+
+(defmethod draw :label
+  [{:keys [sprite-batch asset-manager] :as context}
+   {:keys [text font size] :or {text ""} :as obj}]
+  (when-not (.isLoaded #^AssetManager asset-manager font)
+    (let [params (FreetypeFontLoader$FreeTypeFontLoaderParameter.)]
+      (set! (.fontFileName params)
+            font)
+      (set! (.size (.fontParameters params))
+            size)
+      (.load #^AssetManager asset-manager (str size font) BitmapFont params)
+      (.finishLoading #^AssetManager asset-manager)))
+  (.begin #^SpriteBatch sprite-batch)
+  (.draw (.get #^AssetManager asset-manager (str size font))
+         sprite-batch
+         text
+         (float 0) (float 0))
   (.end  #^SpriteBatch sprite-batch))

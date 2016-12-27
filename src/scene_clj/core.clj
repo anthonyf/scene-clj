@@ -10,10 +10,17 @@
            (org.lwjgl.input Keyboard)
            (com.badlogic.gdx.scenes.scene2d Stage)
            (com.badlogic.gdx.utils.viewport FitViewport)
-           (com.badlogic.gdx.graphics.glutils ShapeRenderer ShapeRenderer$ShapeType)
+           (com.badlogic.gdx.graphics.glutils ShapeRenderer
+                                              ShapeRenderer$ShapeType)
            (com.badlogic.gdx.math Matrix4)
-           (com.badlogic.gdx.graphics.g2d SpriteBatch)
-           [com.badlogic.gdx.assets AssetManager])
+           (com.badlogic.gdx.graphics.g2d SpriteBatch
+                                          BitmapFont)
+           (com.badlogic.gdx.assets.loaders.resolvers InternalFileHandleResolver)
+           (com.badlogic.gdx.assets AssetManager)
+           (com.badlogic.gdx.graphics.g2d.freetype FreeTypeFontGenerator
+                                                   FreeTypeFontGeneratorLoader
+                                                   FreetypeFontLoader
+            FreetypeFontLoader$FreeTypeFontLoaderParameter))
   (:require [clojure.stacktrace :as stack]
             [scene-clj.drawing :as d]
             [scene-clj.behavior :as b]))
@@ -24,19 +31,30 @@
 
 (def ^:private context (atom nil))
 
+;; FileHandleResolver resolver = new InternalFileHandleResolver();
+;; manager.setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(resolver));
+;; manager.setLoader(BitmapFont.class, ".ttf", new FreetypeFontLoader(resolver));
+
 (defn- make-application
   [width height]
   (let [indentity-matrix (Matrix4.)
         app (proxy [ApplicationAdapter] []
 
               (create []
-                (let [camera (OrthographicCamera. width height)]
+                (let [camera (OrthographicCamera. width height)
+                      asset-manager (AssetManager.)
+                      resolver (InternalFileHandleResolver.)]
+
+                  ;; set up ttf font loader support for asset manager
+                  (.setLoader asset-manager FreeTypeFontGenerator (FreeTypeFontGeneratorLoader. resolver))
+                  (.setLoader asset-manager BitmapFont ".ttf" (FreetypeFontLoader. resolver))
+
                   (reset! context
                           {:shape-renderer (ShapeRenderer.)
                            :sprite-batch (SpriteBatch.)
                            :camera camera
                            :viewport (FitViewport. width height camera)
-                           :asset-manager (AssetManager.)}))
+                           :asset-manager asset-manager}))
                 (.update (:camera @context))
                 (.idt #^Matrix4 indentity-matrix)
                 (proxy-super create))
