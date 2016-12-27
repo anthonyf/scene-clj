@@ -109,17 +109,18 @@
 (defmethod draw :label
   [{:keys [sprite-batch asset-manager] :as context}
    {:keys [text font size] :or {text ""} :as obj}]
-  (when-not (.isLoaded #^AssetManager asset-manager font)
-    (let [params (FreetypeFontLoader$FreeTypeFontLoaderParameter.)]
-      (set! (.fontFileName params)
-            font)
-      (set! (.size (.fontParameters params))
-            size)
-      (.load #^AssetManager asset-manager (str size font) BitmapFont params)
-      (.finishLoading #^AssetManager asset-manager)))
-  (.begin #^SpriteBatch sprite-batch)
-  (.draw (.get #^AssetManager asset-manager (str size font))
-         sprite-batch
-         text
-         (float 0) (float 0))
-  (.end  #^SpriteBatch sprite-batch))
+  (let [font-name (str size font)]
+    (when-not (.isLoaded #^AssetManager asset-manager font-name)
+      (let [params (FreetypeFontLoader$FreeTypeFontLoaderParameter.)]
+        (set! (.fontFileName params)
+              font)
+        (set! (.size (.fontParameters params))
+              size)
+        (.load #^AssetManager asset-manager font-name BitmapFont params)
+        (.finishLoading #^AssetManager asset-manager)))
+    (.begin #^SpriteBatch sprite-batch)
+    (.draw (.get #^AssetManager asset-manager font-name)
+           sprite-batch
+           text
+           (float 0) (float 0))
+    (.end  #^SpriteBatch sprite-batch)))
