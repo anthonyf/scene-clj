@@ -67,6 +67,8 @@
                   (try
                     (reset! scene
                             (b/behave (.getDeltaTime Gdx/graphics)
+                                      @scene
+                                      []
                                       @scene))
 
                     (d/draw @context
