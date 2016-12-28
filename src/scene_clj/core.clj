@@ -31,10 +31,6 @@
 
 (def ^:private context (atom nil))
 
-;; FileHandleResolver resolver = new InternalFileHandleResolver();
-;; manager.setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(resolver));
-;; manager.setLoader(BitmapFont.class, ".ttf", new FreetypeFontLoader(resolver));
-
 (defn- make-application
   [width height]
   (let [indentity-matrix (Matrix4.)

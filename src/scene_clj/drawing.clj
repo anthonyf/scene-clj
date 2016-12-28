@@ -39,11 +39,6 @@
   (doseq [child children]
     (draw context child)))
 
-(defn group
-  [children & {:as m}]
-  (merge {:behavior :group :children children}
-         m))
-
 (defmethod draw :line
   [{:keys [shape-renderer] :as context}
    {:keys [x1 y1 x2 y2 color] :or {color [1 1 1 1] :as obj}
@@ -54,11 +49,6 @@
       (.setColor #^ShapeRenderer shape-renderer r g b a)))
   (.line #^ShapeRenderer shape-renderer x1 y1 x2 y2)
   (.end #^ShapeRenderer shape-renderer))
-
-(defn line
-  [x1 y1 x2 y2 & {:keys [color] :as m}]
-  (merge {:behavior :line :x1 x1 :y1 y1 :x2 x2 :y2 y2 :color color}
-         m))
 
 (defmethod draw :rect
   [{:keys [shape-renderer]}
