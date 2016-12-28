@@ -5,7 +5,7 @@
 
 (def screen-size [1024 768])
 
-(def number-of-rects 1000)
+(def number-of-rects 5000)
 
 (reset! scene/scene
         (let [[width height] screen-size]

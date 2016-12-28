@@ -8,6 +8,27 @@
    (com.badlogic.gdx.assets AssetManager)
    (com.badlogic.gdx.graphics.g2d.freetype FreetypeFontLoader$FreeTypeFontLoaderParameter)))
 
+(def ^:dynamic *current-batch* nil)
+
+(defn begin-batch
+  ([renderer]
+   (begin-batch renderer nil))
+  ([renderer type]
+   (let [[current-renderer current-type] *current-batch*]
+     (when-not (= [renderer type] *current-batch*)
+       (if-not (nil? current-renderer)
+         (.end current-renderer))
+       (set! *current-batch* [renderer type])
+       (if (nil? type)
+         (.begin renderer)
+         (.begin renderer type))))))
+
+(defn finish-batch
+  []
+  (when-let [[current-renderer _] *current-batch*]
+    (.end current-renderer)
+    (set! *current-batch* nil)))
+
 (defmulti draw (fn [context obj]
                  (cond (map? obj) (let [{:keys [behavior]} obj]
                                     (if (sequential? behavior)
@@ -43,25 +64,23 @@
   [{:keys [shape-renderer] :as context}
    {:keys [x1 y1 x2 y2 color] :or {color [1 1 1 1] :as obj}
     :as obj}]
-  (.begin #^ShapeRenderer shape-renderer ShapeRenderer$ShapeType/Line)
+  (begin-batch shape-renderer ShapeRenderer$ShapeType/Line)
   (when color
     (let [[r g b a] color]
       (.setColor #^ShapeRenderer shape-renderer r g b a)))
-  (.line #^ShapeRenderer shape-renderer x1 y1 x2 y2)
-  (.end #^ShapeRenderer shape-renderer))
+  (.line #^ShapeRenderer shape-renderer x1 y1 x2 y2))
 
 (defmethod draw :rect
   [{:keys [shape-renderer]}
    {:keys [x y width height color filled?] :or {color [1 1 1 1]
                                                 filled? false}}]
-  (.begin #^ShapeRenderer shape-renderer (if filled?
-                                           ShapeRenderer$ShapeType/Filled
-                                           ShapeRenderer$ShapeType/Line))
+  (begin-batch shape-renderer (if filled?
+                                ShapeRenderer$ShapeType/Filled
+                                ShapeRenderer$ShapeType/Line))
   (when color
     (let [[r g b a] color]
       (.setColor #^ShapeRenderer shape-renderer r g b a)))
-  (.rect #^ShapeRenderer shape-renderer x y width height)
-  (.end #^ShapeRenderer shape-renderer))
+  (.rect #^ShapeRenderer shape-renderer x y width height))
 
 (defmethod draw :rotate
   [{:keys [shape-renderer
@@ -93,8 +112,7 @@
 (defmethod draw :image
   [{:keys [sprite-batch] :as context}
    {:keys [x y texture] :as obj}]
-  (.begin #^SpriteBatch sprite-batch)
-  (.end  #^SpriteBatch sprite-batch))
+  (begin-batch sprite-batch))
 
 (defmethod draw :label
   [{:keys [sprite-batch asset-manager] :as context}
@@ -108,9 +126,8 @@
               size)
         (.load #^AssetManager asset-manager font-name BitmapFont params)
         (.finishLoading #^AssetManager asset-manager)))
-    (.begin #^SpriteBatch sprite-batch)
+    (begin-batch sprite-batch)
     (.draw (.get #^AssetManager asset-manager font-name)
            sprite-batch
            text
-           (float 0) (float 0))
-    (.end  #^SpriteBatch sprite-batch)))
+           (float 0) (float 0))))

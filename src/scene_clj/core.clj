@@ -84,9 +84,10 @@
                                       @scene
                                       []
                                       @scene))
-
-                    (d/draw @context
-                            @scene)
+                    (binding [d/*current-batch* nil]
+                      (d/draw @context
+                              @scene)
+                      (d/finish-batch))
 
                     (catch Exception e
                       (stack/print-stack-trace e)
