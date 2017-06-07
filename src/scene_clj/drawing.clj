@@ -96,7 +96,7 @@
            sprite-batch] :as context}
    {:keys [sx sy] :as obj}]
   (let [transform (.getTransformMatrix #^ShapeRenderer shape-renderer)]
-    (.scale #^Matrix4 transform sx sy)
+    (.scale #^Matrix4 transform #^float sx #^float sy)
     (.setTransformMatrix #^ShapeRenderer shape-renderer transform)
     (.setTransformMatrix #^SpriteBatch sprite-batch transform)))
 
@@ -127,7 +127,7 @@
         (.load #^AssetManager asset-manager font-name BitmapFont params)
         (.finishLoading #^AssetManager asset-manager)))
     (begin-batch sprite-batch)
-    (.draw (.get #^AssetManager asset-manager font-name)
+    (.draw (.get #^AssetManager asset-manager #^String font-name)
            sprite-batch
            text
            (float 0) (float 0))))
