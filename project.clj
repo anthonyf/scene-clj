@@ -12,5 +12,9 @@
   :main ^:skip-aot scene-clj.examples.rotating-rects
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}}
-  :global-vars {*warn-on-reflection* true
-                            *assert* false})
+  :global-vars {*warn-on-reflection* true}
+  ;; :jvm-opts ["-Dcom.sun.management.jmxremote"
+  ;;            "-Dcom.sun.management.jmxremote.ssl=false"
+  ;;            "-Dcom.sun.management.jmxremote.authenticate=false"
+  ;;            "-Dcom.sun.management.jmxremote.port=43210"]
+  )
